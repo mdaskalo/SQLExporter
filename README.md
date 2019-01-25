@@ -10,6 +10,10 @@ java -jar SQLExcelExporter.jar -config <file>
 
 
 A JSON Configuration file can be used with the following content -
+Options:
+* Option large=true|false - use streaming for large files
+* File extensions can be xls or xlsx
+* Placeholder ##Date## in filename will be replaced with date in reverse format yyyyMMdd
 
 ```json
 {
@@ -19,9 +23,10 @@ A JSON Configuration file can be used with the following content -
     "username": "user",
     "password": "password"
   },
-  "workspace": [
+  "excelFile": [
     {
       "id": "1",
+      "large": true,
       "worksheet": [
         {
           "id": "1",
@@ -34,7 +39,8 @@ A JSON Configuration file can be used with the following content -
           "workSheetName": "Stock"
         }
       ],
-      "fileName": "C:/temp/workspace1.xls"
+      "fileName": "C:/PathToFile/##Date## Filename123.xlsx",
+      "preparationProcedureStatement": "{ call DataPreparationProcedure }"
     }
   ]
 }

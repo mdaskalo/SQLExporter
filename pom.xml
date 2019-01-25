@@ -33,23 +33,34 @@
             <version>2.4</version>
         </dependency>
 
-
-        <dependency>
-            <groupId>com.oracle</groupId>
-            <artifactId>ojdbc6</artifactId>
-            <version>11.2.0</version>
-        </dependency>
-
+		<!-- https://mvnrepository.com/artifact/oracle/ojdbc6 -->
+		<dependency>
+		    <groupId>oracle</groupId>
+		    <artifactId>ojdbc6</artifactId>
+		    <version>11.2.0.3</version>
+		</dependency>
 
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi</artifactId>
-            <version>3.13</version>
+            <version>4.0.1</version>
         </dependency>
-
-
+        
+		<dependency>
+		    <groupId>org.apache.poi</groupId>
+		    <artifactId>poi-ooxml</artifactId>
+		    <version>4.0.1</version>
+		</dependency>        
     </dependencies>
-
+    
+    <repositories>
+		<repository>
+			<id>data-nucleus</id>
+			<name>Maven Data Nucleus</name>
+			<url>http://www.datanucleus.org/downloads/maven2</url>
+		</repository>    
+    </repositories>                
+   
     <build>
         <defaultGoal>install</defaultGoal>
         <plugins>
@@ -57,8 +68,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>2.3.2</version>
                 <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
             </plugin>
             <plugin>

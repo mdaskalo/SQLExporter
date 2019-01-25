@@ -3,25 +3,31 @@ package com.sachinhandiekar.sqltools.excel;
 import com.google.gson.Gson;
 import com.sachinhandiekar.sqltools.excel.model.SQLExcelExporterConfig;
 import com.sachinhandiekar.sqltools.excel.model.Worksheet;
-import com.sachinhandiekar.sqltools.excel.model.Workspace;
+import com.sachinhandiekar.sqltools.excel.model.ExcelFile;
 import org.apache.commons.cli.*;
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
+
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * A main class to run the SQLExcelReporter
@@ -38,6 +44,7 @@ public class SQLExcelExporter {
     private static final Logger logger = LoggerFactory.getLogger(SQLExcelExporter.class);
 
     public static void main(String[] args) {
+    	Connection connection = null;
         try {
 
             // Parse the CLI arguments to get the location of the config
@@ -46,7 +53,7 @@ public class SQLExcelExporter {
             Gson gson = new Gson();
 
             // Load the JSON Config file
-            logger.info("Reading JSON Config from :" + jsonConfigFilePath);
+            logger.info("Reading JSON Config from: " + jsonConfigFilePath);
 
             BufferedReader br = new BufferedReader(new FileReader(jsonConfigFilePath));
 
@@ -59,37 +66,71 @@ public class SQLExcelExporter {
 
             // Create a connection to the database
             logger.debug("Creating a connection to the database...");
-            Connection connection = DriverManager.getConnection(sqlExcelImporterConfig.getDatasource().getJdbcUrl(),
+            connection = DriverManager.getConnection(sqlExcelImporterConfig.getDatasource().getJdbcUrl(),
                     sqlExcelImporterConfig.getDatasource().getUserName(),
                     sqlExcelImporterConfig.getDatasource().getPassword());
 
 
-            //Iterate through the list of workspace
-            List<Workspace> workspaceList = sqlExcelImporterConfig.getWorkspaces();
+            //Iterate through the list of excelFile
+            List<ExcelFile> excelFileList = sqlExcelImporterConfig.getExcelFiles();
 
-            for (Workspace workspace : workspaceList) {
-                HSSFWorkbook hssfWorkBook = new HSSFWorkbook();
+            for (ExcelFile excelFile : excelFileList) {
+        		logger.info("*ExcelFile " + excelFile.getId() + " Large: " + excelFile.isLarge());
+            	Workbook workBook = null;
+            	if (excelFile.isLarge()) 
+            		workBook = new SXSSFWorkbook(1000);
+            	else if (excelFile.getFileName().toLowerCase().endsWith(".xlsx")) 
+            		workBook = new XSSFWorkbook();
+            	else if (excelFile.getFileName().toLowerCase().endsWith(".xls")) 
+            		workBook = new HSSFWorkbook();
+            	else
+            	{
+            		logger.error("File name can have extensions xls or xlsx only.");
+            		System.exit(1);
+            	}
+            	
+            	if (excelFile.getPreparationProcedureStatement() != null && 
+            			excelFile.getPreparationProcedureStatement().trim() != "" )
+            	{
+            		logger.info("**Stored procedure " + excelFile.getPreparationProcedureStatement());
+            		executeStroedProcedure(excelFile.getPreparationProcedureStatement(), connection);
+            	}
 
-                // Iterate through the list of worksheet for each workspace
-                List<Worksheet> worksheets = workspace.getWorksheets();
+                // Iterate through the list of worksheet for each excelFile
+                List<Worksheet> worksheets = excelFile.getWorksheets();
 
                 for (Worksheet workSheet : worksheets) {
+            		logger.info("**Worksheet " + workSheet.getId());
                     ResultSet resultSet = getResultSetForQuery(workSheet.getSqlQuery(), connection);
-                    generateWorksheet(workSheet.getWorkSheetName(), hssfWorkBook, resultSet);
+                    generateWorksheet(workSheet.getWorkSheetName(), workBook, resultSet);
                     resultSet.close();
                 }
 
-                FileOutputStream fileOut = new FileOutputStream(workspace.getFileName());
-                hssfWorkBook.write(fileOut);
+                String fullFilePath = excelFile.getFileName();
+                
+                LocalDateTime ldt = LocalDateTime.now();
+                DateTimeFormatter formmat1 = DateTimeFormatter.ofPattern("yyyyMMdd", Locale.ENGLISH);
+                String fileNamePrefix = formmat1.format(ldt);
+                fullFilePath = fullFilePath.replace("##Date##", fileNamePrefix);
+                
+                FileOutputStream fileOut = new FileOutputStream(fullFilePath);
+                workBook.write(fileOut);
                 fileOut.close();
             }
-
-
-            logger.info("Data has been exported in excel file.");
-
-            connection.close();
+            logger.info("Data has been successfully exported to excel files.");
         } catch (Exception e) {
-            logger.error("An error occurred while exporting data to excel.");
+            logger.error("An error occurred while exporting data to excel. " + e);
+            e.printStackTrace();
+            System.exit(1);
+        }
+        finally {
+            try {
+				if (connection != null && !connection.isClosed())
+				{
+					connection.close();
+				}
+			} catch (SQLException e) {
+			}
         }
     }
 
@@ -121,29 +162,40 @@ public class SQLExcelExporter {
 
     }
 
-    private static void generateHeaderRow(HSSFSheet sheet, ResultSet rs) throws SQLException {
+    
+    private static void generateHeaderRow(Sheet sheet, ResultSet rs) throws SQLException {
 
-        HSSFRow headerRow = sheet.createRow(HEADER_ROW);
+        Row headerRow = sheet.createRow(HEADER_ROW);
 
         ResultSetMetaData resultsetMetadata = rs.getMetaData();
         int columnCount = resultsetMetadata.getColumnCount();
 
         for (int i = 0; i < columnCount; i++) {
-            HSSFCell cell = headerRow.createCell(i);
+            Cell cell = headerRow.createCell(i);
             cell.setCellValue(resultsetMetadata.getColumnName(i + 1));
         }
     }
 
 
-    private static void populateRows(HSSFSheet sheet, ResultSet rs) throws SQLException {
+    private static void populateRows(Sheet sheet, ResultSet rs) throws SQLException {
         int rowCounter = DATA_ROW;
+        
+//        for (int i=1;i<=rs.getMetaData().getColumnCount();i++) {
+//            String colName = rs.getMetaData().getColumnName(i);
+//            String colType = rs.getMetaData().getColumnTypeName(i);
+//            System.out.println(colName+" of type "+colType);
+//	    }
+        
         while (rs.next()) {
 
-            HSSFRow row = sheet.createRow(rowCounter);
+        	Row row = sheet.createRow(rowCounter);
             int columnCount = rs.getMetaData().getColumnCount();
 
             for (int i = 0; i < columnCount; i++) {
-                row.createCell(i).setCellValue(rs.getString(i + 1));
+            	if (rs.getMetaData().getColumnTypeName(i+1).equals("NUMBER"))
+            		row.createCell(i).setCellValue(rs.getDouble(i + 1));
+            	else
+            		row.createCell(i).setCellValue(rs.getString(i + 1));
             }
             rowCounter++;
         }
@@ -154,6 +206,12 @@ public class SQLExcelExporter {
         Statement statement = connection.createStatement();
         return statement.executeQuery(query);
     }
+    
+    private static void executeStroedProcedure(String query, Connection connection) throws SQLException {
+    	// Example "{ call proc3 }";
+    	CallableStatement cs = connection.prepareCall(query);
+    	cs.execute();
+    }
 
     /**
      * Generate a worksheet and populate it with a header row and data rows
@@ -163,12 +221,14 @@ public class SQLExcelExporter {
      * @param resultSet a JDBC resultset containing the data
      * @throws SQLException if any error occurs
      */
-    private static void generateWorksheet(String workSheetName, HSSFWorkbook workbook, ResultSet resultSet) throws SQLException {
-        HSSFSheet workSheet = workbook.createSheet(workSheetName);
+    private static void generateWorksheet(String workSheetName, Workbook workbook, ResultSet resultSet) throws SQLException {
+    	Sheet workSheet = workbook.createSheet(workSheetName);
 
         // Create the first Header row
         // Get all the column names from the ResultSet
         generateHeaderRow(workSheet, resultSet);
+        
+        workSheet.createFreezePane(0, 1);
 
         // Populate the data in the rows
         populateRows(workSheet, resultSet);

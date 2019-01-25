@@ -5,13 +5,14 @@ import com.google.gson.annotations.SerializedName;
 import java.util.List;
 
 /**
- * A class to denote the Workspace JSON Model.
+ * A class to denote the ExcelFile JSON Model.
  * <p>
  * E.g.
  * <p>
  * "workspace": [
  * {
  * "id": "1",
+ * "large": true,
  * "worksheet": [
  * {
  * "id": "1",
@@ -24,20 +25,27 @@ import java.util.List;
  * "workSheetName": "Stock"
  * }
  * ],
- * "fileName": "C:/temp/workspace1.xls"
+ * "fileName": "C:/temp/workspace1.xls",
+ * "preparationProcedureStatement": "{ call proc123 }"
  * }
  * ]
  */
-public class Workspace {
+public class ExcelFile {
 
     @SerializedName("id")
     private long id;
+    
+    @SerializedName("large")
+    private boolean large = false;    
 
-    @SerializedName("worksheet")
+	@SerializedName("worksheet")
     private List<Worksheet> worksheets;
 
     @SerializedName("fileName")
     private String fileName;
+
+    @SerializedName("preparationProcedureStatement")
+    private String preparationProcedureStatement;
 
     public long getId() {
         return id;
@@ -63,5 +71,19 @@ public class Workspace {
         this.fileName = fileName;
     }
 
+    public String getPreparationProcedureStatement() {
+        return preparationProcedureStatement;
+    }
 
+    public void setPreparationProcedureStatement(String preparationProcedureStatement) {
+        this.preparationProcedureStatement = preparationProcedureStatement;
+    }    
+
+    public boolean isLarge() {
+		return large;
+	}
+
+	public void setLarge(boolean large) {
+		this.large = large;
+	}    
 }

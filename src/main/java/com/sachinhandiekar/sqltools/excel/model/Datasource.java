@@ -9,9 +9,9 @@ import com.google.gson.annotations.SerializedName;
  * <p>
  * "datasource": {
  * "className": "oracle.jdbc.driver.OracleDriver",
- * "jdbcUrl": "jdbc:oracle:thin:@//192.168.56.101:1521/orcl",
- * "username": "developer1",
- * "password": "password"
+ * "jdbcUrl": "jdbc:oracle:thin:@//localhost:1521/orcl",
+ * "username": "user1",
+ * "password": "pass1"
  * }
  */
 public class Datasource {
@@ -66,7 +66,6 @@ public class Datasource {
                 "className='" + className + '\'' +
                 ", jdbcUrl='" + jdbcUrl + '\'' +
                 ", userName='" + userName + '\'' +
-                ", password='" + password + '\'' +
                 '}';
     }
 }

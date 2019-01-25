@@ -12,26 +12,28 @@ import java.util.List;
  * {
  * "datasource": {
  * "className": "oracle.jdbc.driver.OracleDriver",
- * "jdbcUrl": "jdbc:oracle:thin:@//192.168.56.101:1521/orcl",
- * "username": "developer1",
- * "password": "password"
+ * "jdbcUrl": "jdbc:oracle:thin:@//localhost:1521/orcl",
+ * "username": "user1",
+ * "password": "pass1"
  * },
- * "workspace": [
+ * "excelFile": [
  * {
  * "id": "1",
+ * "large": true,
  * "worksheet": [
  * {
  * "id": "1",
- * "sqlQuery": "Select * from Person",
- * "workSheetName": "Person"
+ * "sqlQuery": "Select * from Table1",
+ * "workSheetName": "Q1"
  * },
  * {
  * "id": "2",
- * "sqlQuery": "Select * from Stock",
- * "workSheetName": "Stock"
+ * "sqlQuery": "Select * from Table2",
+ * "workSheetName": "Q2"
  * }
  * ],
- * "fileName": "C:/temp/workspace1.xls"
+ * "fileName": "C:/temp/##Date##-excelFile1.xls",
+ * "preparationProcedureStatement": "{ call proc123 }"
  * }
  * ]
  * }
@@ -41,8 +43,8 @@ public class SQLExcelExporterConfig {
     @SerializedName("datasource")
     private Datasource datasource;
 
-    @SerializedName("workspace")
-    private List<Workspace> workspaces;
+    @SerializedName("excelFile")
+    private List<ExcelFile> excelFiles;
 
     public Datasource getDatasource() {
         return datasource;
@@ -53,11 +55,11 @@ public class SQLExcelExporterConfig {
     }
 
 
-    public List<Workspace> getWorkspaces() {
-        return workspaces;
+    public List<ExcelFile> getExcelFiles() {
+        return excelFiles;
     }
 
-    public void setWorkspaces(List<Workspace> workspaces) {
-        this.workspaces = workspaces;
+    public void setExcelFiles(List<ExcelFile> excelFiles) {
+        this.excelFiles = excelFiles;
     }
 }

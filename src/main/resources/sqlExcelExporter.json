@@ -1,26 +1,22 @@
 {
   "datasource": {
     "className": "oracle.jdbc.driver.OracleDriver",
-    "jdbcUrl": "jdbc:oracle:thin:@//localhost:1521/orcl",
-    "username": "user",
-    "password": "password"
+    "jdbcUrl": "jdbc:oracle:thin:@localhost:1521:orcl",
+    "username": "user1",
+    "password": "pass1"
   },
-  "workspace": [
+  "excelFile": [
     {
       "id": "1",
+      "large": false,
       "worksheet": [
         {
           "id": "1",
-          "sqlQuery": "Select * from Person",
-          "workSheetName": "Person"
-        },
-        {
-          "id": "2",
-          "sqlQuery": "Select * from Stock",
-          "workSheetName": "Stock"
+          "sqlQuery": "SELECT * FROM table1",
+          "workSheetName": "CCY"
         }
       ],
-      "fileName": "C:/temp/workspace1.xls"
+      "fileName": "C:/Temp/1/File1.xls"
     }
   ]
 }
